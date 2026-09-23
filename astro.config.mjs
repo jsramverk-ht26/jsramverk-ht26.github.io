@@ -16,20 +16,36 @@ export default defineConfig({
 	integrations: [
 		mermaid({ autoTheme: true }),
 		starlight({
-			title: 'DV1677 — Projektkrav',
-			description: 'Fördjupning och kodexempel för projektets sex krav. JavaScript-baserade webbramverk, BTH.',
+			title: 'DV1677 — Projektet',
+			description: 'Allt om projektet i DV1677: de två alternativen, baseline, arbetssätt, de sex kraven och bedömningen. JavaScript-baserade webbramverk, BTH.',
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/jsramverk-ht26' }],
 			sidebar: [
 				{ label: 'Start', link: '/' },
 				{
-					label: 'Projektkraven',
+					label: 'Om projektet',
 					items: [
+						'projektet/oversikt',
+						'projektet/baseline',
+						'projektet/arbetssatt',
+					]
+				},
+				{
+					label: 'Kraven',
+					items: [
+						'krav/oversikt',
 						'krav/krav-1-jwt-autentisering',
 						'krav/krav-2-websockets',
 						'krav/krav-3-kommentarer',
 						'krav/krav-4-projektspecifikt',
 						'krav/krav-5-notifieringar',
 						'krav/krav-6-fordjupad-testning',
+					]
+				},
+				{
+					label: 'Bedömning och inlämning',
+					items: [
+						'projektet/bedomning',
+						'projektet/inlamning',
 					]
 				},
 			],
