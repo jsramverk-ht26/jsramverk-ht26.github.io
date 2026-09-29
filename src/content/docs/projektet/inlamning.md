@@ -19,9 +19,33 @@ Lämna in följande i uppgiften **3. Projekt** på Canvas:
   Läraren ska sedan tidigare vara inbjuden till dessa med Write-behörighet.
 - Länk till den avslutande **Pull Requesten från `dev` till `main`**. **Merga
   den inte själva** — den rättas, granskas, godkänns och stängs av rättande
-  lärare som en del av bedömningen. Vad PR:en ska innehålla beskrivs i
-  [Arbetssätt](/projektet/arbetssatt/#den-avslutande-och-sista-pull-requesten)
+  lärare som en del av bedömningen.
+
+  **PR:ens beskrivning är själva redovisningen.** Den ska innehålla, för
+  varje krav ni implementerat:
+  - Kravet som rubrik (t.ex. `## Krav 2 — WebSockets`)
+  - Permalänk till koden (fil + rader) där kravet är implementerat
+  - Hur lösningen fungerar och vilka val ni gjort
+  - Vad ni valt bort, och varför
+
+  samt en länk till redovisningsvideon (se nedan) någonstans i beskrivningen.
+  Fullständiga detaljer: [Arbetssätt](/projektet/arbetssatt/#den-avslutande-och-sista-pull-requesten)
   och [Bedömning och poäng](/projektet/bedomning/#redovisningen-är-en-del-av-bedömningen).
+
+  **Exempel på PR-beskrivning (kortat):**
+
+  ```markdown
+  ## Krav 1 — JWT-autentisering
+  Implementerat i `backend/middleware/auth.js` (rad 12–48, [permalänk](...)).
+  Verifierar JWT i en middleware som körs före varje skyddad route.
+  Valde bort refresh-tokens — token förnyas genom ny inloggning.
+
+  ## Krav 2 — WebSockets
+  Implementerat i `backend/sockets/document.js` ([permalänk](...)).
+  ...
+
+  Video: https://youtu.be/xxxxxxx
+  ```
 
 ### Redovisningsvideo
 Spela in en gemensam video där båda i paret syns (t.ex. via Zoom, som en
