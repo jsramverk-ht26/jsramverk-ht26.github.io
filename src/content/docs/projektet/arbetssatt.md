@@ -46,20 +46,11 @@ En slags praxis att gör någon form av uppdelning på det här sättet.
 
 ### Den avslutande och sista Pull Requesten
 
-En Pull Request består av två delar, och det är viktigt att hålla dessa isär:
+En Pull Request består av två delar: **Diffen** (allt som skiljer `dev` från
+`main` — hela projektet) och **Beskrivningen** (den fria texten på PR:en, där
+er redovisning står — kraven som rubriker, permalänkar till koden och länken
+till videon).
 
-| | |
-| --- | --- |
-| **Diffen** | Allt som skiljer `dev` från `main` — alltså **hela projektet**. Den blir stor, och det ska den vara. Det här är en release. |
-| **Beskrivningen** | Den fria texten på PR:en. **Det är här er redovisning står** — kraven som rubriker, permalänkar till koden och länken till videon. Vad som ska ingå per krav står under "Bedömning och poäng" längre ner på den här sidan. |
-
-**Förvillkor:** innan ni öppnar den ska *alla* krav vara mergade till `dev`, och `dev` ska vara driftsatt och fungera. Den sista Pull Requesten är en avslutning och inlämning — inga krav ska implementeras i den. Dom ska redan finnas i dev-branchen.
-
-**Merga den inte själva.** Öppna den, länka den i Canvas-inlämningen och låt den ligga. Lärare bedömer och reviewar den och **mergar den** som en del av bedömningen. Uppstår oklarheter och frågor som lämnas som kommentarer direkt i PR:en. Så, håll koll på eventuella kommentarer från lärare i er PR
-
-**Efter deadline - pusha inget till `dev`.** En Pull Request uppdateras automatiskt när branchen ändras, så en push efter deadline ändrar det som ska bedömas. Commit-datumen syns i PR:ens Commits-flik.
-
-*En liten notis här;*
-*lärare kommer att bedöma/granska/rätta utifrån er dev-branch - sedan sker en merge av PR mot main.*
-*Tänk alltså på att gör PR från dev mot main.*
-*Om något, mot all förmodan, skulle gå fel när lärare mergar till main så är det ändå ok - eftersom rättningen gjorts på dev.*
+Vad PR:en ska innehålla, förvillkoren för att öppna den och hur den hanteras
+efter inlämning beskrivs i sin helhet under
+[Inlämning](/projektet/inlamning/#den-avslutande-och-sista-pull-requesten).

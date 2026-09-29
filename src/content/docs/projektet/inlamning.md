@@ -17,35 +17,43 @@ Lämna in följande i uppgiften **3. Projekt** på Canvas:
 ### Länkar och repon
 - Länkar till GitHub-repona och driftsatta applikationer (frontend och backend).
   Läraren ska sedan tidigare vara inbjuden till dessa med Write-behörighet.
-- Länk till den avslutande **Pull Requesten från `dev` till `main`**. **Merga
-  den inte själva** — den rättas, granskas, godkänns och stängs av rättande
-  lärare som en del av bedömningen.
+- Länk till den avslutande **Pull Requesten från `dev` till `main`** — se
+  [nedan](#den-avslutande-och-sista-pull-requesten) för vad den ska innehålla.
 
-  **PR:ens beskrivning är själva redovisningen.** Den ska innehålla, för
-  varje krav ni implementerat:
-  - Kravet som rubrik (t.ex. `## Krav 2 — WebSockets`)
-  - Permalänk till koden (fil + rader) där kravet är implementerat
-  - Hur lösningen fungerar och vilka val ni gjort
-  - Vad ni valt bort, och varför
+### Den avslutande och sista Pull Requesten
 
-  samt en länk till redovisningsvideon (se nedan) någonstans i beskrivningen.
-  Fullständiga detaljer: [Arbetssätt](/projektet/arbetssatt/#den-avslutande-och-sista-pull-requesten)
-  och [Bedömning och poäng](/projektet/bedomning/#redovisningen-är-en-del-av-bedömningen).
+En Pull Request består av två delar, och det är viktigt att hålla dessa isär:
 
-  **Exempel på PR-beskrivning (kortat):**
+| | |
+| --- | --- |
+| **Diffen** | Allt som skiljer `dev` från `main` — alltså **hela projektet**. Den blir stor, och det ska den vara. Det här är en release. |
+| **Beskrivningen** | Den fria texten på PR:en. **Det är här er redovisning står** — kraven som rubriker, permalänkar till koden och länken till videon. Vad som ska ingå per krav står under [Bedömning och poäng](/projektet/bedomning/#redovisningen-är-en-del-av-bedömningen). |
 
-  ```markdown
-  ## Krav 1 — JWT-autentisering
-  Implementerat i `backend/middleware/auth.js` (rad 12–48, [permalänk](...)).
-  Verifierar JWT i en middleware som körs före varje skyddad route.
-  Valde bort refresh-tokens — token förnyas genom ny inloggning.
+**Förvillkor:** innan ni öppnar den ska *alla* krav vara mergade till `dev`, och `dev` ska vara driftsatt och fungera. Den sista Pull Requesten är en avslutning och inlämning — inga krav ska implementeras i den. Dom ska redan finnas i dev-branchen.
 
-  ## Krav 2 — WebSockets
-  Implementerat i `backend/sockets/document.js` ([permalänk](...)).
-  ...
+**Merga den inte själva.** Öppna den, länka den i Canvas-inlämningen och låt den ligga. Lärare bedömer och reviewar den och **mergar den** som en del av bedömningen. Uppstår oklarheter och frågor som lämnas som kommentarer direkt i PR:en. Så, håll koll på eventuella kommentarer från lärare i er PR.
 
-  Video: https://youtu.be/xxxxxxx
-  ```
+**Efter deadline - pusha inget till `dev`.** En Pull Request uppdateras automatiskt när branchen ändras, så en push efter deadline ändrar det som ska bedömas. Commit-datumen syns i PR:ens Commits-flik.
+
+*En liten notis här;*
+*lärare kommer att bedöma/granska/rätta utifrån er dev-branch - sedan sker en merge av PR mot main.*
+*Tänk alltså på att gör PR från dev mot main.*
+*Om något, mot all förmodan, skulle gå fel när lärare mergar till main så är det ändå ok - eftersom rättningen gjorts på dev.*
+
+**Exempel på PR-beskrivning (kortat):**
+
+```markdown
+## Krav 1 — JWT-autentisering
+Implementerat i `backend/middleware/auth.js` (rad 12–48, [permalänk](...)).
+Verifierar JWT i en middleware som körs före varje skyddad route.
+Valde bort refresh-tokens — token förnyas genom ny inloggning.
+
+## Krav 2 — WebSockets
+Implementerat i `backend/sockets/document.js` ([permalänk](...)).
+...
+
+Video: https://youtu.be/xxxxxxx
+```
 
 ### Redovisningsvideo
 Spela in en gemensam video där båda i paret syns (t.ex. via Zoom, som en
