@@ -26,6 +26,7 @@ export default defineConfig({
 					items: [
 						'projektet/oversikt',
 						'projektet/baseline',
+						'projektet/broker',
 						'projektet/arbetssatt',
 					]
 				},

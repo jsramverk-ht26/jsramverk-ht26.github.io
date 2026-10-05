@@ -20,6 +20,10 @@ Lämna in följande i uppgiften **3. Projekt** på Canvas:
 - Länk till den avslutande **Pull Requesten från `dev` till `main`** — se
   [nedan](#den-avslutande-och-sista-pull-requesten) för vad den ska innehålla.
 
+:::note[Resource-booking: README]
+Om ni valt resource-booking ska backendens README även beskriva hur ni använder brokern — se [Dokumentera i README](/projektet/broker/#dokumentera-i-readme). Det gäller inte texteditor.
+:::
+
 ### Den avslutande och sista Pull Requesten
 
 En Pull Request består av två delar, och det är viktigt att hålla dessa isär:

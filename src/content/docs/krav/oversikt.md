@@ -9,6 +9,10 @@ sidebar:
 
 Kraven finns beskrivna på sidan [Krav i projektet](/krav/oversikt/).
 
+:::note[Bokningssystem: brokern]
+Brokern **ska användas** av alla som valt resource-booking: all bokning går via den. Se [Brokern — bokningar i resource-booking](/projektet/broker/). Texteditor-grupper berörs inte.
+:::
+
 Tänk på att:
 - Krav 3 (Kommentarer) bygger på Krav 2 (WebSockets) — väljer ni Krav 3 måste Krav 2 också vara implementerat.
 - Krav 4 är projektspecifikt — läs beskrivningen för ert projektalternativ.
@@ -46,7 +50,7 @@ Bygger på Krav 2 — Socket.io ska vara implementerat.
 
 *[→ Utförlig beskrivning med kodexempel](/krav/krav-4-projektspecifikt/)*
 - **Texteditor:** Lägg till code-mode per dokument. Editorn byts ut mot Monaco Editor med JavaScript-stöd. Dokumenttypen sparas i databasen.
-- **Bokningssystem:** Implementera bokningslogiken — avgör om tider krockar, vad som är ledigt en given dag, och vem som får avboka vad. Logiken ska ligga i separata moduler och täckas av tester.
+- **Bokningssystem:** Implementera bokningslogiken — avgör om tider krockar, vad som är ledigt en given dag, och vem som får avboka vad. Logiken ska ligga i separata moduler och täckas av tester. Bokningarna görs mot [brokern](/projektet/broker/).
 
 
 ## Krav 5 – Notifieringar

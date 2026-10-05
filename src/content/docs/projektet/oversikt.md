@@ -70,7 +70,9 @@ Gemensamt för alla tre är att de exponerar ett HTTP-API – vilket gör det m�
 
 Ni bygger ett bokningssystem där användare kan se tillgängliga resurser och göra tidsbokningar. I sin enklaste form är det oberoende av vilken underliggande plattform som hanterar resurserna – resurser läggs in manuellt i databasen (via seed-data).
 
-Om ni väljer att implementera **Krav 4** så vore en integrering mot ett riktigt API en önskvärd utökning – t ex Proxmox eller OpenStack etc. Detta för att hämta resursstatus eller starta/stoppa maskiner. Det kräver tillgång till och en API-nyckel, vilket i nuläget inte är säkert, men är ett work-in-progress.
+:::note[Brokern är en förutsättning]
+Bokningar i resource-booking går via en **broker** — en mellanhand som ger er tillgång till riktiga, isolerade resurser (Proxmox, MAAS, OpenStack) utan att ni når deras egna API:er. Er backend **ska** använda den för resurser och bokningar. Läs [Brokern — bokningar i resource-booking](/projektet/broker/).
+:::
 
 **Resurser för projektet**
 - Startrepo: [resource-booking-ht26](https://github.com/jsramverk-ht26/resource-booking-ht26)

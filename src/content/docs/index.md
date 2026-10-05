@@ -23,6 +23,8 @@ Requesten fungerar. **Läs det här innan ni börjar koda** — särskilt
 deploy-avsnittet, som annars gör att era driftsatta appar står stilla hela
 projektet.
 
+[**Brokern**](/projektet/broker/) — gäller **resource-booking**: all bokning går via en broker mot riktiga, isolerade resurser. Förklaring, API-referens och kodexempel.
+
 ### Kraven
 
 [**Kraven — översikt**](/krav/oversikt/) — de sex kraven i kortform. Ni väljer

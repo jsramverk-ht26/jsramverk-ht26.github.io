@@ -115,6 +115,10 @@ Utan detta skickar ni hundratals meddelanden i minuten.
 
 ## Bokningssystem: bokningslogik
 
+:::note
+Glöm inte brokern — bokningarna ska göras mot den. Se [Brokern — bokningar i resource-booking](/projektet/broker/).
+:::
+
 Tre delar, i stigande svårighetsgrad: krockar, tillgänglighet, regler.
 
 ### 1. Krockar (overlap)

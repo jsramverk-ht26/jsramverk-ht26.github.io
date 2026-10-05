@@ -38,3 +38,7 @@ Applikationen ska som minimum kunna:
 - Ta bort en bokning
 
 Resurser finns fördefinierade i databasen via seed-data — ingen admin-vy krävs för att lägga till resurser.
+
+:::note[Resource-booking: det här är nytt i projektet]
+Under projektet (vecka 6–10) hämtas resurserna och bokningarna görs via en **broker**, inte bara mot seed-data. Tänk på det när ni planerar er databas och era routes. Se [Brokern — bokningar i resource-booking](/projektet/broker/).
+:::
