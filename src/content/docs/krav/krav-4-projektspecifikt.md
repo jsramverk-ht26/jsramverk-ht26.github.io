@@ -1,16 +1,16 @@
 ---
 title: "Krav 4 — Projektspecifikt"
-description: "Code-mode med Monaco (texteditor) eller bokningslogik (bokningssystem)."
+description: "Krav 4.1: code-mode med Monaco (texteditor). Krav 4.2: bokningslogik (bokningssystem)."
 ---
 
 Det enda kravet som ser olika ut beroende på vilket projekt ni valt.
 
-- **Texteditor:** code-mode — dokument kan vara kod, med syntaxfärgning
-- **Bokningssystem:** bokningslogik — krockar, tillgänglighet, regler
+- **Krav 4.1, texteditor:** code-mode — dokument kan vara kod, med syntaxfärgning
+- **Krav 4.2, bokningssystem:** bokningslogik — krockar, tillgänglighet, regler
 
 ---
 
-## Texteditor: code-mode med Monaco
+## Krav 4.1 – Texteditor: code-mode med Monaco
 
 Ett dokument ska kunna vara antingen text eller kod. Är det kod ska editorn ge
 syntaxfärgning, radnummer och indentering — precis som VS Code, eftersom Monaco
@@ -113,7 +113,7 @@ Utan detta skickar ni hundratals meddelanden i minuten.
 
 ---
 
-## Bokningssystem: bokningslogik
+## Krav 4.2 – Bokningssystem: bokningslogik
 
 :::note
 Glöm inte brokern — bokningarna ska göras mot den. Se [Brokern — bokningar i resource-booking](/projektet/broker/).
@@ -249,8 +249,8 @@ Att logiken ligger i en egen `domain/`-katalog, skild från routes och databas,
 
 ### Vad som redovisas
 
-**Editor:** hur dokumenttypen sparas och hur editorn växlas. Nämn eventuell
+**Krav 4.1 (editor):** hur dokumenttypen sparas och hur editorn växlas. Nämn eventuell
 samverkan med realtidsredigering.
 
-**Bokning:** visa overlap-villkoret och motivera valet av statuskoder. Beskriv
+**Krav 4.2 (bokning):** visa overlap-villkoret och motivera valet av statuskoder. Beskriv
 vilka regler ni implementerat och varför.

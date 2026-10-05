@@ -23,7 +23,7 @@ Ni arbetar med två brancher under projektet:
 
 För att förtydliga:
 1. Skapa `dev` från `main` när projektet startar.
-2. Skapa en **feature branch per krav**, namngiven efter kravet — till exempel `feature/krav-2-websockets`. Då blir listan av Pull Requests självförklarande, och varje krav går att granska för sig.
+2. Skapa en **feature branch per krav**. Branchen får heta vad ni vill, men vi rekommenderar starkt att ni namnger den efter kravet — till exempel `feature/krav-2-websockets`. Då blir listan av Pull Requests självförklarande, och varje krav går att granska för sig.
 3. Gör en Pull Request från feature branchen till `dev` och merga den **när kravet fungerar och är beskrivet** — inte i slutet. Annars sitter ni med sex parallella brancher i vecka 10.
 4. Vid inlämningen: en sista Pull Request från `dev` till `main`. Se nästa avsnitt.
 
@@ -48,7 +48,7 @@ En slags praxis att gör någon form av uppdelning på det här sättet.
 
 En Pull Request består av två delar: **Diffen** (allt som skiljer `dev` från
 `main` — hela projektet) och **Beskrivningen** (den fria texten på PR:en, där
-er redovisning står — kraven som rubriker, permalänkar till koden och länken
+er redovisning står — kraven som rubriker, vilka kodfiler som är berörda och länken
 till videon).
 
 Vad PR:en ska innehålla, förvillkoren för att öppna den och hur den hanteras

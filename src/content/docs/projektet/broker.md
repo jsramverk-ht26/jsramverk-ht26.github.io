@@ -7,7 +7,7 @@ sidebar:
 
 **Gäller bara er som valt resource-booking.** Texteditor-grupper kan hoppa över den här sidan.
 
-Brokern är **en förutsättning för projektet**, inte ett krav, och den ingår inte i [Baseline](/projektet/baseline/). Er backend **ska** använda den för resurser och bokningar. Bokningslogiken i [Krav 4](/krav/krav-4-projektspecifikt/) bygger på den.
+Brokern är **en förutsättning för projektet**, inte ett krav, och den ingår inte i [Baseline](/projektet/baseline/). Er backend **ska** använda den för resurser och bokningar. Bokningslogiken i [Krav 4.2](/krav/krav-4-projektspecifikt/) bygger på den.
 
 ## Vad är brokern?
 
@@ -58,7 +58,7 @@ Brokern för en bokföring över vem som har reserverat vad och när. **Ni får 
 - **Låt inte bokningar ligga för länge.** Boka kort, och avboka era testbokningar direkt. Annars står andra grupper utan.
 - En bokning kan nekas (`ALREADY_BOOKED`, `CAPACITY_EXCEEDED`) för att en annan grupp har resursen, inte för att er egen logik är fel.
 
-Typerna skiljer sig åt: MAAS-maskiner är **odelbara** (bokad eller ledig) och passar direkt mot bokningslogiken i [Krav 4](/krav/krav-4-projektspecifikt/): krockar, tillgänglighet och regler. Proxmox och OpenStack är **delbara**, där bara summan av kraven avgör och där brokern fattar beslutet.
+Typerna skiljer sig åt: MAAS-maskiner är **odelbara** (bokad eller ledig) och passar direkt mot bokningslogiken i [Krav 4.2](/krav/krav-4-projektspecifikt/): krockar, tillgänglighet och regler. Proxmox och OpenStack är **delbara**, där bara summan av kraven avgör och där brokern fattar beslutet.
 
 Det är samma tänk som i bokningslogiken: en konferenssal är *bokad eller ledig*, medan en nod med 16 vCPU rymmer fyra bokningar à 4 och nekar den femte. Skillnaden är bara att *brokern* nu fattar beslutet.
 
@@ -538,7 +538,7 @@ test('brokern nere ger 503 och en pending bokning', async () => {
 
 ## Dokumentera i README
 
-Skriv i backendens README: hur ni använder brokern (vilka providers), var `BROKER_API_URL` och `BROKER_GROUP_TOKEN` sätts, och hur ni hanterar att brokern är nere. Hur brokern används i bokningslogiken tas upp i redovisningen av [Krav 4](/krav/krav-4-projektspecifikt/).
+Skriv i backendens README: hur ni använder brokern (vilka providers), var `BROKER_API_URL` och `BROKER_GROUP_TOKEN` sätts, och hur ni hanterar att brokern är nere. Hur brokern används i bokningslogiken tas upp i redovisningen av [Krav 4.2](/krav/krav-4-projektspecifikt/).
 
 ## Vanliga fallgropar
 

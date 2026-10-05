@@ -38,7 +38,7 @@ projektalternativen, vanliga fallgropar och vad som måste redovisas:
 | 1 | [JWT-autentisering](/krav/krav-1-jwt-autentisering/) | Registrering, inloggning, skyddade routes |
 | 2 | [WebSockets och realtid](/krav/krav-2-websockets/) | Socket.io, rum, klientsida i React |
 | 3 | [Kommentarer](/krav/krav-3-kommentarer/) | Kräver krav 2 |
-| 4 | [Projektspecifikt](/krav/krav-4-projektspecifikt/) | Monaco respektive bokningslogik |
+| 4 | [Projektspecifikt](/krav/krav-4-projektspecifikt/) | Krav 4.1: Monaco (texteditor). Krav 4.2: bokningslogik (bokningssystem) |
 | 5 | [Notifieringar](/krav/krav-5-notifieringar/) | ntfy.sh, Discord eller e-post |
 | 6 | [Fördjupad testning](/krav/krav-6-fordjupad-testning/) | Bygger vidare på vecka 4 |
 

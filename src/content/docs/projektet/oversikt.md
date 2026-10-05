@@ -11,7 +11,7 @@ Under projektdelen (vecka 6–10) fortsätter varje grupp att arbeta med det pro
 - **Texteditor** (ssr-editor)— utgår från startrepot `ssr-editor-ht26`. En texteditor med stöd för realtidsredigering, kommentarer och code-mode.
 - **Bokningssystem** (resource-booking) — utgår från startrepot `resource-booking-ht26`. Ett bokningssystem för resurser med stöd för realtidsuppdateringar, kommentarer och korrekt bokningslogik.
 
-Båda alternativen följer samma kravstruktur — fem av sex krav är gemensamma. Krav 4 skiljer sig åt beroende på vilket projekt ni valt.
+Båda alternativen följer samma kravstruktur — fem av sex krav är gemensamma. Krav 4 skiljer sig åt beroende på vilket projekt ni valt (Krav 4.1 för texteditor, Krav 4.2 för bokningssystem).
 
 ### Baseline
 
@@ -44,7 +44,7 @@ Ni bygger en webbaserad texteditor där användare kan:
 
 Utgångspunkten är en enkel server-renderad editor med Express och SQLite. Under kursen bygger ni om den till en modern arkitektur med React-frontend, MongoDB och driftsättning på en server.
 
-**Kodeditor-läget (Krav 4)**
+**Kodeditor-läget (Krav 4.1)**
 
 Ett av de valfria kraven för texteditor-projektet är att lägga till ett kodeditor-läge – ett dokument kan märkas som "kod" och editorn byts då mot en mer avancerad kodeditor med syntax highlighting. [Monaco Editor](https://microsoft.github.io/monaco-editor/) (som driver VS Code) och [CodeMirror](https://codemirror.net/) är två vanliga alternativ.
 

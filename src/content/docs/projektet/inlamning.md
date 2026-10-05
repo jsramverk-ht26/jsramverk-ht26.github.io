@@ -31,7 +31,7 @@ En Pull Request består av två delar, och det är viktigt att hålla dessa isä
 | | |
 | --- | --- |
 | **Diffen** | Allt som skiljer `dev` från `main` — alltså **hela projektet**. Den blir stor, och det ska den vara. Det här är en release. |
-| **Beskrivningen** | Den fria texten på PR:en. **Det är här er redovisning står** — kraven som rubriker, permalänkar till koden och länken till videon. Vad som ska ingå per krav står under [Bedömning och poäng](/projektet/bedomning/#redovisningen-är-en-del-av-bedömningen). |
+| **Beskrivningen** | Den fria texten på PR:en. **Det är här er redovisning står** — kraven som rubriker, vilka kodfiler som är berörda och länken till videon. Vad som ska ingå per krav står under [Bedömning och poäng](/projektet/bedomning/#redovisningen-är-en-del-av-bedömningen). |
 
 **Förvillkor:** innan ni öppnar den ska *alla* krav vara mergade till `dev`, och `dev` ska vara driftsatt och fungera. Den sista Pull Requesten är en avslutning och inlämning — inga krav ska implementeras i den. Dom ska redan finnas i dev-branchen.
 
@@ -48,12 +48,12 @@ En Pull Request består av två delar, och det är viktigt att hålla dessa isä
 
 ```markdown
 ## Krav 1 — JWT-autentisering
-Implementerat i `backend/middleware/auth.js` (rad 12–48, [permalänk](...)).
+Implementerat i `backend/middleware/auth.js` och `backend/routes/auth.js`.
 Verifierar JWT i en middleware som körs före varje skyddad route.
 Valde bort refresh-tokens — token förnyas genom ny inloggning.
 
 ## Krav 2 — WebSockets
-Implementerat i `backend/sockets/document.js` ([permalänk](...)).
+Implementerat i `backend/sockets/document.js`.
 ...
 
 Video: https://youtu.be/xxxxxxx

@@ -56,7 +56,7 @@ Intervallen överlappar med avsikt. Tre väl genomförda krav väger lika tungt 
 Flera krav är avsiktligt fritt hållna — ni väljer själva hur de ska lösas. Priset för den friheten är att ni måste beskriva vad ni gjort. **Ett krav som inte är redovisat kan inte ge mer än 6 poäng**, hur bra koden än är. Skälet är enkelt: det som inte går att hitta går inte att bedöma.
 
 För varje krav ni implementerat ska ni ange:
-- **Var i koden kravet är implementerat** — filer och rader. Använd permalänkar till GitHub: öppna filen, markera raderna och tryck `y`, så låses länken till en commit och pekar rätt även efter att ni ändrat koden.
+- **Var i koden kravet är implementerat** — vilka kodfiler. Det räcker att filerna nämns.
 - **Hur lösningen fungerar** och vilka val ni gjort.
 - **Vad ni valt bort**, och varför.
 
