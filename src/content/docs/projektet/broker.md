@@ -26,15 +26,13 @@ sequenceDiagram
     participant DB as Er MongoDB
     participant BR as Brokern (:8500)
     F->>B: POST /api/bookings
-    B->>DB: spara bokning (pending)
     B->>BR: POST /proxmox/allocations
     alt godkänd
         BR-->>B: 201 { id, secret, tag }
-        B->>DB: bokning confirmed + brokerns id/secret
+        B->>DB: spara bokning + brokerns id/secret
         B-->>F: 201
     else full
         BR-->>B: 409 CAPACITY_EXCEEDED
-        B->>DB: bokning rejected
         B-->>F: 409
     end
 ```
@@ -75,35 +73,165 @@ Lägg till i `.env.example`, i deploy-workflowet och i `docker-compose.yml`:
 | `BROKER_API_URL` | Brokerns adress, utan avslutande `/` |
 | `BROKER_GROUP_TOKEN` | Er grupps token (GitHub-secret). **Aldrig `VITE_`-prefix** |
 
-## API-referens
-
-Allt pratar JSON. Varje anrop kräver headern `X-Booker-Group: <token>`.
-
-Byt `$URL` och `$TOKEN` i exemplen. Kör dem från er VPS eller från en terminal i skolans nät.
+**Testa att det fungerar** (från er VPS eller skolans nät). Svaret ska vara er grupp och tagg:
 
 ```bash
-export URL=http://194.47.155.214:8500
-export TOKEN=<er token>            # skriv aldrig in den i en fil som committas
+curl -s -H "X-Booker-Group: $BROKER_GROUP_TOKEN" $BROKER_API_URL/whoami
+# { "label": "grupp-5", "tag": "g05" }
 ```
 
-### `GET /whoami` — vem är vi?
+## Vad skickas var?
 
-Bekräftar att token fungerar, och ger er tagg.
+Tre saker skickas till brokern, och var de hör hemma är det enda ni behöver komma ihåg:
 
-```bash
-curl -s -H "X-Booker-Group: $TOKEN" $URL/whoami
-# → { "label": "grupp-5", "tag": "g05" }
+| Vad | Hur det skickas | När |
+|-----|-----------------|-----|
+| **Token** (er grupp) | header `X-Booker-Group` | **Alltid**, i varje anrop |
+| **id** (en bokning) | i adressen: `/allocations/<id>/…` | Förläng och avboka |
+| **secret** (en bokning) | header `X-Booker-Allocation-Secret` | Förläng och avboka |
+
+Allt som beskriver *vad ni vill boka* (`want`, `user`, `endsAt` …) skickas som JSON i **body**.
+
+| Åtgärd | Anrop | Token | id | secret | Body |
+|--------|-------|:-----:|:--:|:------:|------|
+| Vem är vi | `GET /whoami` | ja | | | |
+| Se resurser | `GET /<typ>/inventory` | ja | | | |
+| **Boka** | `POST /<typ>/allocations` | ja | | | vad ni vill ha |
+| Se era bokningar | `GET /<typ>/allocations` | ja | | | |
+| Ändra sluttid | `POST /<typ>/allocations/<id>/extend` | ja | ja | ja | `endsAt` |
+| **Avboka** | `POST /<typ>/allocations/<id>/withdraw` | ja | ja | ja | |
+
+`<typ>` är `proxmox`, `maas` eller `openstack`.
+
+## Så använder ni API:t
+
+Alla exempel är Node.js med inbyggda `fetch`, och de har provkörts mot brokern. Börja med de här raderna, som gäller för alla exempel nedan:
+
+```js
+const BASE = process.env.BROKER_API_URL
+const headers = {
+  'X-Booker-Group': process.env.BROKER_GROUP_TOKEN,
+  'Content-Type': 'application/json',
+}
 ```
 
-Om det här fungerar vet ni att nät, token och adress är rätt.
+### Vem är vi?
 
-### `GET /<provider>/inventory` — vad finns?
-
-`<provider>` är `proxmox`, `maas` eller `openstack`. Visar verkligt läge, i realtid.
-
-```bash
-curl -s -H "X-Booker-Group: $TOKEN" $URL/proxmox/inventory
+```js
+const res = await fetch(`${BASE}/whoami`, { headers })
+console.log(await res.json())   // { label: 'grupp-5', tag: 'g05' }
 ```
+
+### Se vad som finns
+
+```js
+const res = await fetch(`${BASE}/proxmox/inventory`, { headers })
+const { nodes } = await res.json()
+console.log(nodes.map(n => n.name))   // ['dv1677-fakeprox']
+```
+
+För MAAS får ni `{ machines }` i stället för `{ nodes }`, och för OpenStack `{ projects }`. Se [Referens](#referens) nedan.
+
+### Boka
+
+Vad ni skickar i body beror på typen. Det enda ni alltid måste ange är `user` och `endsAt`.
+
+```js
+// Proxmox: berätta vad ni behöver, inte vilken maskin
+const res = await fetch(`${BASE}/proxmox/allocations`, {
+  method: 'POST',
+  headers,
+  body: JSON.stringify({
+    want: { vcpus: 1, ramMb: 1024, diskGb: 10 },
+    user: 'u123',
+    endsAt: '2026-10-20T18:00:00Z',
+  }),
+})
+const { allocation } = await res.json()
+console.log(allocation.id, allocation.secret)   // spara båda direkt!
+```
+
+För de andra typerna ändrar ni bara body:
+
+```js
+{ systemId: 'xk6y7d', user: 'u123', endsAt: '…' }                  // MAAS: peka ut maskinen
+{ want: { vcpus: 1, ramMb: 1024 }, user: 'u123', endsAt: '…' }     // OpenStack: som Proxmox, utan diskGb
+```
+
+| Fält | Krav | Förklaring |
+|------|------|------------|
+| `endsAt` | ja | ISO 8601 |
+| `user` | ja | Fri text. Använd ert interna användar-id, **inte e-post** (syns för andra i inventory) |
+| `startsAt` | nej | Standard: nu |
+| `idempotencyKey` | nej | Samma nyckel en gång till ger tillbaka er ursprungliga bokning i stället för en ny. Bra vid retry, använd ert bokning-`_id` |
+
+### id och secret
+
+Svaret på en bokning innehåller två värden:
+
+- **`id`** är bokningens identitet, som ett ordernummer.
+- **`secret`** är bokningens eget lösenord. Det krävs för att **förlänga** och **avboka** just den bokningen.
+
+Token säger att *ni* är ni. Secret säger att det är *ni som äger just den här bokningen*.
+
+**Båda visas bara i svaret på själva bokningen.** Tappar ni dem går bokningen inte att avboka eller förlänga. Spara dem direkt i er egen databas, och lämna **aldrig ut `secret`** till frontenden:
+
+```js
+await db.collection('bookings').updateOne(
+  { _id: bookingId },
+  { $set: { broker: { allocationId: allocation.id, secret: allocation.secret } } },
+)
+```
+
+### Se era bokningar
+
+```js
+const res = await fetch(`${BASE}/proxmox/allocations`, { headers })
+const { allocations } = await res.json()   // era aktiva bokningar, utan id och secret
+```
+
+### Ändra sluttid
+
+Här behövs `id` i adressen och `secret` som header:
+
+```js
+const res = await fetch(`${BASE}/proxmox/allocations/${id}/extend`, {
+  method: 'POST',
+  headers: { ...headers, 'X-Booker-Allocation-Secret': secret },
+  body: JSON.stringify({ endsAt: '2026-10-20T19:00:00Z' }),
+})
+```
+
+Kortar ni tiden går det alltid. **Förlänger** ni görs samma kontroll som vid en ny bokning, så den kan nekas.
+
+### Avboka
+
+```js
+const res = await fetch(`${BASE}/proxmox/allocations/${id}/withdraw`, {
+  method: 'POST',
+  headers: { ...headers, 'X-Booker-Allocation-Secret': secret },
+})
+console.log((await res.json()).allocation.status)   // 'released'
+```
+
+Det är säkert att anropa igen med samma `id` och `secret` efter en timeout. Ni får samma svar.
+
+### När brokern säger nej
+
+Ett `409` betyder att bokningen nekades. Det är **inte ett fel i er kod**, utan ett svar att visa för användaren:
+
+```js
+if (res.status === 409) {
+  const { code } = await res.json()   // 'CAPACITY_EXCEEDED' (Proxmox/OpenStack) eller 'ALREADY_BOOKED' (MAAS)
+}
+```
+
+Resurserna delas av alla grupper, så en nekad bokning kan bero på att en annan grupp har resursen. Hela listan över felkoder finns i [Referens](#referens).
+
+## Referens
+
+<details>
+<summary>Vad inventory svarar med (olika form per typ)</summary>
 
 **Proxmox** — en post per nod. `used` är verklig användning just nu:
 
@@ -132,9 +260,15 @@ curl -s -H "X-Booker-Group: $TOKEN" $URL/proxmox/inventory
 
 ⚠️ `used` för OpenStack visar alltid 0, en känd begränsning. Kontrollera själva formen med `curl` innan ni skriver koden.
 
-Fältet `owner` är det `user` som någon bokade med. Skicka därför aldrig e-postadresser som `user` (se `POST /<provider>/allocations` nedan).
+Fältet `owner` är det `user` som någon bokade med. Skicka därför aldrig e-postadresser som `user` (se [Boka](#boka)).
 
-### `GET /proxmox/capacity` — hur stort är systemet?
+
+</details>
+
+<details>
+<summary>capacity och availability</summary>
+
+**`GET /proxmox/capacity` — hur stort är systemet?**
 
 Bara Proxmox (och OpenStack). Systemets *totala* kapacitet, utan bokningar avräknade — till för att planera framåt.
 
@@ -147,7 +281,7 @@ För MAAS finns inget sådant (en maskin är odelbar) och `GET /maas/capacity` s
 
 Svaret har `ETag`. Skicka `If-None-Match: "<etag>"` så får ni `304 Not Modified` så länge inget ändrats. Det kostar ingenting att fråga ofta.
 
-### `GET /<provider>/availability` — vad är ledigt just nu?
+**`GET /<provider>/availability` — vad är ledigt just nu?**
 
 ```bash
 curl -s -H "X-Booker-Group: $TOKEN" $URL/proxmox/availability
@@ -159,79 +293,11 @@ curl -s -H "X-Booker-Group: $TOKEN" $URL/maas/availability
 
 Det är läget **just nu**, inte för framtida tider. Det är en förhandsvisning, inte ett löfte: `POST` kan fortfarande nekas direkt efteråt.
 
-### `POST /<provider>/allocations` — boka
 
-Samma header som övriga anrop. Det som skickas skiljer sig per typ.
+</details>
 
-```bash
-# Proxmox: ange vad ni behöver, inte en specifik maskin
-curl -s -X POST -H "X-Booker-Group: $TOKEN" -H "Content-Type: application/json" \
-  -d '{"want":{"vcpus":1,"ramMb":1024,"diskGb":10},"user":"u123","endsAt":"2026-10-20T18:00:00Z"}' \
-  $URL/proxmox/allocations
-
-# MAAS: peka ut maskinen (den är odelbar)
-curl -s -X POST -H "X-Booker-Group: $TOKEN" -H "Content-Type: application/json" \
-  -d '{"systemId":"xk6y7d","user":"u123","endsAt":"2026-10-20T18:00:00Z"}' \
-  $URL/maas/allocations
-
-# OpenStack: som Proxmox, men utan diskGb
-curl -s -X POST -H "X-Booker-Group: $TOKEN" -H "Content-Type: application/json" \
-  -d '{"want":{"vcpus":1,"ramMb":1024},"user":"u123","endsAt":"2026-10-20T18:00:00Z"}' \
-  $URL/openstack/allocations
-```
-
-| Fält | Krav | Förklaring |
-|------|------|------------|
-| `endsAt` | ja | ISO 8601 |
-| `startsAt` | nej | Standard: nu |
-| `user` | ja | Fri text som identifierar vem som bokar. Använd ert interna användar-id, **inte e-post** |
-| `want` | Proxmox, OpenStack | Alla fält som positiva tal. OpenStack bara `vcpus` och `ramMb` |
-| `systemId` | MAAS | Maskinens `id` från `/maas/inventory` |
-| `idempotencyKey` | nej, rekommenderas | Samma nyckel en gång till ger tillbaka er ursprungliga bokning (`200`, inte `201`) i stället för en andra. Använd ert bokning-`_id` |
-
-Svar vid lyckad bokning (`201`):
-
-```json
-{ "allocation": { "id": "…", "secret": "…", "tag": "g05-xxxx", "startsAt": "…", "endsAt": "…", "status": "…" } }
-```
-
-⚠️ `id` och `secret` visas **bara här**, se [nedan](#id-och-secret).
-
-**Nekas ni** får ni `409`:
-
-- **MAAS:** `ALREADY_BOOKED` — någon annan bokning har ett *överlappande* tidsfönster på samma maskin. Bokningar i olika tidsfönster på samma maskin är helt okej.
-- **Proxmox/OpenStack:** `CAPACITY_EXCEEDED` — era `want` ryms inte i det som är kvar. Här finns ingen `ALREADY_BOOKED`: ni får ha flera, till och med helt överlappande, bokningar så länge summan ryms.
-
-### `GET /<provider>/allocations` — era bokningar
-
-Listar er grupps egna aktiva bokningar, även framtida. Visar `tag`, `startsAt`, `endsAt`, `resourceType`, `request`/`machine` och `status`, men **aldrig `id` eller `secret`**.
-
-```bash
-curl -s -H "X-Booker-Group: $TOKEN" $URL/proxmox/allocations
-```
-
-### `POST /<provider>/allocations/:id/extend` — ändra sluttid
-
-Kräver bokningens egen secret i en separat header:
-
-```bash
-curl -s -X POST -H "X-Booker-Group: $TOKEN" -H "X-Booker-Allocation-Secret: $SECRET" \
-  -H "Content-Type: application/json" -d '{"endsAt":"2026-10-20T19:00:00Z"}' \
-  $URL/proxmox/allocations/$ID/extend
-```
-
-Kortar ni tiden (tidigare `endsAt`) går det alltid direkt. **Förlänger** ni görs samma kontroll som vid en ny bokning, så den kan nekas.
-
-### `POST /<provider>/allocations/:id/withdraw` — avboka
-
-```bash
-curl -s -X POST -H "X-Booker-Group: $TOKEN" -H "X-Booker-Allocation-Secret: $SECRET" \
-  $URL/proxmox/allocations/$ID/withdraw
-```
-
-Ingen body behövs. Anropet är **idempotent**: gör ni det igen med samma id och secret får ni `200` med bokningens nuvarande läge (`released`). Det är säkert att försöka igen efter en timeout.
-
-### Felkoder
+<details>
+<summary>Felkoder</summary>
 
 Brokern svarar `{ "error": "...", "code": "..." }`.
 
@@ -252,25 +318,29 @@ Brokern svarar `{ "error": "...", "code": "..." }`.
 
 Egna koder i er klient: `UNREACHABLE` (ingen kontakt) och `NOT_CONFIGURED` (saknad konfiguration) — svara med `503` till användaren.
 
-## id och secret
 
-Varje bokning får två värden:
+</details>
 
-- **`id`** är bokningens identitet, som ett ordernummer.
-- **`secret`** är bokningens eget lösenord. Det krävs för att **förlänga** och **avboka** just den bokningen.
+## Regler när ni använder brokern
 
-De är skilda från er grupps token. Token säger att *ni* är ni. Secret säger att det är *ni som äger just den här bokningen*. Därför kan inte en annan grupp avboka er, även om den känner till `id`.
+- **Kapaciteten delas av alla grupper.** Boka litet (1 vCPU, ~1 GB) och kort (högst en timme), och **avboka era testbokningar** direkt. Bokar ni upp noden får andra grupper `409`.
+- Boka aldrig MAAS-maskiner "för säkerhets skull".
+- Token i secrets, aldrig i repot, aldrig i frontenden, aldrig i en skärmdump. Läcker ni den: be läraren spärra och ge en ny.
+- Brokern är en kursresurs och kan vara nere. Er app ska klara det.
 
-**Båda visas bara i svaret på själva bokningen.** Tappar ni dem går bokningen inte att avboka eller förlänga, och den blir kvar tills tiden löpt ut. Därför gäller:
+## Dokumentera i README
 
-1. Spara `id` och `secret` **i er egen databas** direkt när ni får dem.
-2. Lämna **aldrig ut `secret`** i era API-svar till frontenden.
+Skriv i backendens README: hur ni använder brokern (vilka providers), var `BROKER_API_URL` och `BROKER_GROUP_TOKEN` sätts, och hur ni hanterar att brokern är nere.
 
-## Vad ändras i er databas?
+## Fördjupning: bygga in brokern i er app
+
+Resten av sidan visar hur ni bygger in brokern i en riktig backend: databasen, en brokerklient, och `createBooking`/`cancelBooking`. Ni behöver inte läsa det för att kunna anropa brokern, men det hjälper när ni ska koppla den till era routes.
+
+### Vad ändras i er databas?
 
 Troligen en del. Referensappens `resources`-samling (`name`, `type`, `description`, `active`) är skriven för resurser ni skapar för hand. När resurserna ligger hos brokern behöver ni **bestämma var sanningen bor.**
 
-### Resurser: två vägar
+#### Resurser: två vägar
 
 | | A. Hämta live varje gång | B. Synka till egen samling |
 |-|--------------------------|----------------------------|
@@ -279,14 +349,13 @@ Troligen en del. Referensappens `resources`-samling (`name`, `type`, `descriptio
 | Nackdel | Långsamt och sårbart: brokern nere = ingen lista | Kan bli inaktuellt |
 | Passar | Om ni bara vill visa fakta | **De flesta grupper.** Välj B och förklara hur ni hanterar inaktuell data |
 
-### Fält att lägga till
+#### Fält att lägga till
 
 | Collection | Nytt fält | Syfte |
 |------------|-----------|-------|
-| `resources` | `provider` (`'proxmox'\|'maas'\|'openstack'`), `externalId` (id hos brokern), `capacity` (`{ vcpus, ramMb, diskGb }`), `source: 'broker'`, `syncedAt` | Koppla er resurs till den verkliga |
+| `resources` | `provider` (`'proxmox'\|'maas'\|'openstack'`), `externalId` (id hos brokern), `capacity` (`{ vcpus, ramMb, diskGb }`), `active` | Koppla er resurs till den verkliga |
 | `bookings` | `want` (`{ vcpus, ramMb, diskGb }`) för delbara resurser | Vad bokningen kräver |
 | `bookings` | `broker` (`{ allocationId, secret, tag }`) | Utan dem går bokningen inte att avboka eller förlänga |
-| `bookings` | `status` får de nya värdena `'pending'` och `'rejected'` | En bokning ni sparat men som brokern ännu inte godkänt, respektive nekat |
 
 Tre saker att tänka på:
 
@@ -294,70 +363,73 @@ Tre saker att tänka på:
 2. **Er egen overlap-logik:** för MAAS (odelbart) kan ni behålla den som förkontroll. För Proxmox och OpenStack (delbara) ska den **inte** neka på ren överlappning, eftersom bara summan av kraven avgör. Där är brokern auktoriteten.
 3. **`user`:** skicka ert interna användar-id, inte e-postadress. Fältet syns för andra i `inventory`.
 
-## Kodexempel
+### Kodexempel
 
 Utgå från dessa, men förstå vad de gör: ni ska kunna förklara varje rad. Exemplen är skrivna för referensappens struktur (`controllers/`, `domain/`, `config/`) och använder Nodes inbyggda `fetch`.
 
-### 1. Brokerklient (`config/broker.js`)
+De fem exemplen hänger ihop så här:
+
+| # | Fil | Vad den gör | Använder |
+|---|-----|-------------|----------|
+| 1 | `config/broker.js` | **Pratar med brokern.** Samlar `fetch`, token, timeout och felhantering på ett ställe, så att resten av koden slipper det | – |
+| 2 | `syncResources` | **Fyller er databas** med brokerns resurser, så att ni har något att visa och koppla bokningar till | 1 |
+| 3 | `createBooking` | **Skapar en bokning** hos brokern och sparar den | 1 |
+| 4 | `cancelBooking` | **Avbokar** hos brokern och sparar det | 1 |
+| 5 | testexempel | Testar 3 och 4 utan att anropa brokern | 1 |
+
+Skillnaden mellan 1 och 2: **1 är verktyget** (ett sätt att anropa brokern), **2 är ett jobb** som använder verktyget för att kopiera brokerns resurslista till er egen `resources`-samling. Exemplen i [Så använder ni API:t](#så-använder-ni-apit) ovan är samma anrop utan klienten, för att visa hur de ser ut.
+
+#### 1. Brokerklient (`config/broker.js`)
 
 Allt som pratar med brokern ligger på ett ställe. Det gör den lätt att mocka i tester.
 
 ```js
 const BASE = process.env.BROKER_API_URL
-const TOKEN = process.env.BROKER_GROUP_TOKEN
-const TIMEOUT_MS = 5000
+const headers = {
+  'X-Booker-Group': process.env.BROKER_GROUP_TOKEN,
+  'Content-Type': 'application/json',
+}
 
 export class BrokerError extends Error {
   constructor(status, code, message) {
     super(message)
-    this.status = status      // HTTP-status från brokern (0 = ingen kontakt)
-    this.code = code          // t.ex. 'CAPACITY_EXCEEDED'
+    this.status = status   // HTTP-status från brokern (0 = ingen kontakt)
+    this.code = code       // t.ex. 'CAPACITY_EXCEEDED'
   }
 }
 
 async function call(path, { method = 'GET', body, secret } = {}) {
-  if (!BASE || !TOKEN) {
-    throw new BrokerError(0, 'NOT_CONFIGURED', 'BROKER_API_URL/BROKER_GROUP_TOKEN saknas')
-  }
-
   let res
   try {
     res = await fetch(`${BASE}${path}`, {
       method,
-      headers: {
-        'X-Booker-Group': TOKEN,
-        'Content-Type': 'application/json',
-        ...(secret ? { 'X-Booker-Allocation-Secret': secret } : {}),
-      },
-      body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(TIMEOUT_MS),   // utan timeout hänger er request när brokern ligger nere
+      headers: secret ? { ...headers, 'X-Booker-Allocation-Secret': secret } : headers,
+      body: body && JSON.stringify(body),
+      signal: AbortSignal.timeout(5000),   // utan timeout hänger er request när brokern ligger nere
     })
   } catch (err) {
     throw new BrokerError(0, 'UNREACHABLE', err.message)
   }
 
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    throw new BrokerError(res.status, data.code ?? 'UNKNOWN', data.error ?? res.statusText)
-  }
+  if (!res.ok) throw new BrokerError(res.status, data.code, data.error)
   return data
 }
 
 export const broker = {
-  whoami: () => call('/whoami'),
-  inventory: (provider) => call(`/${provider}/inventory`),
-  availability: (provider) => call(`/${provider}/availability`),
-  allocate: (provider, payload) => call(`/${provider}/allocations`, { method: 'POST', body: payload }),
-  extend: (provider, id, secret, endsAt) =>
-    call(`/${provider}/allocations/${id}/extend`, { method: 'POST', body: { endsAt }, secret }),
-  withdraw: (provider, id, secret) =>
-    call(`/${provider}/allocations/${id}/withdraw`, { method: 'POST', secret }),
+  inventory: (type) => call(`/${type}/inventory`),
+  allocate: (type, body) => call(`/${type}/allocations`, { method: 'POST', body }),
+  extend: (type, id, secret, endsAt) =>
+    call(`/${type}/allocations/${id}/extend`, { method: 'POST', body: { endsAt }, secret }),
+  withdraw: (type, id, secret) => call(`/${type}/allocations/${id}/withdraw`, { method: 'POST', secret }),
 }
 ```
 
-### 2. Hämta resurser (alternativ B — synka till egen samling)
+Använd den så här: `await broker.inventory('maas')` eller `await broker.withdraw('proxmox', id, secret)`. Misslyckas ett anrop kastas ett `BrokerError` med `status` och `code` (se felkoderna i [Referens](#referens)).
 
-Brokern svarar olika för olika typer: Proxmox ger `{ nodes: [...] }`, MAAS ger `{ machines: [...] }` och OpenStack ger `{ projects: [...] }`.
+#### 2. Synka resurser till er databas
+
+Er app behöver en egen lista över resurser att visa och koppla bokningar till (`resourceId`). Det här jobbet kopierar brokerns lista till er `resources`-samling. Brokern svarar med olika nyckel per typ (`nodes`, `machines`, `projects`), men alla poster har `id`, `name` och `capacity`, så en loop räcker:
 
 ```js
 import { getDB } from '../config/db.js'
@@ -365,66 +437,37 @@ import { broker } from '../config/broker.js'
 
 export async function syncResources() {
   const db = getDB()
-  const now = new Date()
-  const found = []
+  const sources = { proxmox: 'nodes', maas: 'machines', openstack: 'projects' }
 
-  const prox = await broker.inventory('proxmox')
-  for (const n of prox.nodes ?? []) {
-    found.push({
-      provider: 'proxmox', externalId: n.id, name: n.name,
-      description: `${n.capacity.vcpus} vCPU, ${Math.round(n.capacity.ramMb / 1024)} GB RAM`,
-      capacity: n.capacity,
-    })
+  for (const [provider, key] of Object.entries(sources)) {
+    const inventory = await broker.inventory(provider)
+    for (const r of inventory[key] ?? []) {
+      await db.collection('resources').updateOne(
+        { provider, externalId: r.id },
+        { $set: { name: r.name, capacity: r.capacity, active: true } },
+        { upsert: true },
+      )
+    }
   }
-
-  const maas = await broker.inventory('maas')
-  for (const m of maas.machines ?? []) {
-    found.push({
-      provider: 'maas', externalId: m.id, name: m.name,
-      description: `${m.capacity.vcpus} vCPU, ${Math.round(m.capacity.ramMb / 1024)} GB RAM`,
-      capacity: m.capacity,
-    })
-  }
-
-  const os = await broker.inventory('openstack')
-  for (const p of os.projects ?? []) {
-    found.push({
-      provider: 'openstack', externalId: p.id, name: `OpenStack ${p.name.slice(0, 8)}`,
-      description: `${p.capacity.vcpus} vCPU, ${Math.round(p.capacity.ramMb / 1024)} GB RAM (kvot)`,
-      capacity: p.capacity,
-    })
-  }
-
-  for (const r of found) {
-    await db.collection('resources').updateOne(
-      { provider: r.provider, externalId: r.externalId },
-      { $set: { ...r, source: 'broker', active: true, syncedAt: now },
-        $setOnInsert: { createdAt: now } },
-      { upsert: true },
-    )
-  }
-
-  // Resurser som brokern inte längre känner till: markera, radera inte
-  // (era gamla bokningar pekar på dem).
-  await db.collection('resources').updateMany(
-    { source: 'broker', syncedAt: { $lt: now } },
-    { $set: { active: false } },
-  )
-  return found.length
 }
 ```
 
-Kör `syncResources` vid uppstart och sedan på ett intervall, eller via en admin-route. Notera att ni *inte raderar* resurser som försvunnit, utan markerar dem inaktiva.
+`upsert` gör att ni kan köra funktionen hur många gånger som helst utan dubbletter. Kör den vid uppstart och sedan på ett intervall, eller via en admin-route.
 
-### 3. Skapa en bokning
+*Valfritt:* vill ni att resurser som brokern slutat visa ska markeras inaktiva (radera dem inte, gamla bokningar pekar på dem), lägg `syncedAt: start` i `$set` (med `const start = new Date()` överst) och avsluta med:
 
-Ordningen är viktig: spara först, fråga sedan brokern, uppdatera till sist. Då har ni ett `_id` att använda som `idempotencyKey`, och en retry efter en timeout skapar inte en dubbelbokning.
+```js
+await db.collection('resources').updateMany({ syncedAt: { $lt: start } }, { $set: { active: false } })
+```
+
+#### 3. Skapa en bokning
+
+Skapa bokningens `_id` först och skicka det som `idempotencyKey`, så att en retry efter en timeout inte ger en dubbelbokning. Spara bokningen först när brokern har sagt ja:
 
 ```js
 import { ObjectId } from 'mongodb'
 import { getDB } from '../config/db.js'
 import { broker, BrokerError } from '../config/broker.js'
-import { findConflicts } from '../domain/overlap.js'
 
 export async function createBooking(req, res) {
   const { resourceId, startsAt, endsAt, want } = req.body
@@ -433,56 +476,35 @@ export async function createBooking(req, res) {
   const resource = await db.collection('resources').findOne({ _id: new ObjectId(resourceId) })
   if (!resource) return res.status(404).json({ error: 'Resource not found' })
 
-  const start = new Date(startsAt), end = new Date(endsAt)
-  if (isNaN(start) || isNaN(end) || start >= end) {
-    return res.status(400).json({ error: 'Invalid time range' })
-  }
-
-  // Odelbart (MAAS): behåll er egen overlap-kontroll som förkontroll.
-  // Delbart (Proxmox/OpenStack): hoppa över den — brokern räknar summan av kraven.
-  if (resource.provider === 'maas') {
-    const conflicts = await findConflicts(resourceId, start, end)
-    if (conflicts.length > 0) return res.status(409).json({ error: 'Time slot already booked' })
-  }
-
-  const { insertedId } = await db.collection('bookings').insertOne({
-    resourceId: resource._id, bookedBy: req.user._id,
-    startsAt: start, endsAt: end, want: want ?? null,
-    status: 'pending', createdAt: new Date(),
-  })
-
+  const bookingId = new ObjectId()
+  const user = String(req.user._id)
   const payload = resource.provider === 'maas'
-    ? { systemId: resource.externalId, user: String(req.user._id), startsAt, endsAt, idempotencyKey: String(insertedId) }
-    : { want, user: String(req.user._id), startsAt, endsAt, idempotencyKey: String(insertedId) }
+    ? { systemId: resource.externalId, user, startsAt, endsAt, idempotencyKey: String(bookingId) }
+    : { want, user, startsAt, endsAt, idempotencyKey: String(bookingId) }
 
   try {
     const { allocation } = await broker.allocate(resource.provider, payload)
-    await db.collection('bookings').updateOne({ _id: insertedId }, {
-      $set: {
-        status: 'confirmed',
-        broker: { allocationId: allocation.id, secret: allocation.secret, tag: allocation.tag },
-      },
+
+    const booking = {
+      _id: bookingId, resourceId: resource._id, bookedBy: req.user._id,
+      startsAt: new Date(startsAt), endsAt: new Date(endsAt), status: 'confirmed',
+    }
+    await db.collection('bookings').insertOne({
+      ...booking,
+      broker: { allocationId: allocation.id, secret: allocation.secret },
     })
-    const booking = await db.collection('bookings').findOne(
-      { _id: insertedId }, { projection: { 'broker.secret': 0 } },   // lämna aldrig ut secret
-    )
-    return res.status(201).json(booking)
+    return res.status(201).json(booking)   // secret finns bara i databasen, aldrig i svaret
   } catch (err) {
     if (!(err instanceof BrokerError)) throw err
-    // 409 = brokern nekade (fullt / redan bokat). Andra fel = vi vet inte.
-    const denied = err.status === 409
-    await db.collection('bookings').updateOne({ _id: insertedId }, {
-      $set: { status: denied ? 'rejected' : 'pending', brokerError: err.code },
-    })
-    if (denied) return res.status(409).json({ error: 'Not enough capacity', code: err.code })
+    if (err.status === 409) return res.status(409).json({ error: 'Booking denied', code: err.code })
     return res.status(503).json({ error: 'Booking service unavailable', code: err.code })
   }
 }
 ```
 
-Fundera på vad som händer med en `pending`-bokning när brokern ligger nere.
+`409` betyder att brokern nekade bokningen (fullt eller redan bokat). Allt annat (brokern nere, fel token) blir `503`. Vill ni kunna visa nekade försök för användaren kan ni även spara dem med en egen `status`, men det är inget brokern kräver.
 
-### 4. Avboka
+#### 4. Avboka
 
 ```js
 export async function cancelBooking(req, res) {
@@ -507,7 +529,7 @@ export async function cancelBooking(req, res) {
 }
 ```
 
-### 5. Testa utan att anropa brokern på riktigt
+#### 5. Testa utan att anropa brokern på riktigt
 
 Tester ska aldrig träffa den delade brokern. Mocka klienten:
 
@@ -515,30 +537,19 @@ Tester ska aldrig träffa den delade brokern. Mocka klienten:
 import { vi, test, expect } from 'vitest'
 import { broker, BrokerError } from '../config/broker.js'
 
-test('en nekad bokning sparas som rejected', async () => {
+test('en nekad bokning ger 409', async () => {
   vi.spyOn(broker, 'allocate').mockRejectedValue(
     new BrokerError(409, 'CAPACITY_EXCEEDED', 'full'),
   )
   // ... skicka POST /api/bookings med supertest och kontrollera:
-  //   statusen blir 409, och bokningen i databasen har status 'rejected'
+  //   statusen blir 409, och ingen bokning har sparats i databasen
 })
 
-test('brokern nere ger 503 och en pending bokning', async () => {
+test('brokern nere ger 503', async () => {
   vi.spyOn(broker, 'allocate').mockRejectedValue(new BrokerError(0, 'UNREACHABLE', 'timeout'))
-  // ... förvänta 503 och status 'pending'
+  // ... förvänta 503 och att ingen bokning sparats
 })
 ```
-
-## Regler när ni använder brokern
-
-- **Kapaciteten delas av alla grupper.** Boka litet (1 vCPU, ~1 GB) och kort (högst en timme), och **avboka era testbokningar** direkt. Bokar ni upp noden får andra grupper `409`.
-- Boka aldrig MAAS-maskiner "för säkerhets skull".
-- Token i secrets, aldrig i repot, aldrig i frontenden, aldrig i en skärmdump. Läcker ni den: be läraren spärra och ge en ny.
-- Brokern är en kursresurs och kan vara nere. Er app ska klara det.
-
-## Dokumentera i README
-
-Skriv i backendens README: hur ni använder brokern (vilka providers), var `BROKER_API_URL` och `BROKER_GROUP_TOKEN` sätts, och hur ni hanterar att brokern är nere.
 
 ## Vanliga fallgropar
 
