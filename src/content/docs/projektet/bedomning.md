@@ -38,7 +38,7 @@ Väljer ni minimiantalet krav måste alltså alla tre hålla måttet — tre sla
 | 1–4 | Påbörjat, men fungerar inte — eller går inte att verifiera |
 | 5–6 | Fungerar, men är inte redovisat — eller är bara delvis löst |
 | 7–8 | **Uppfyllt:** fungerar och är tydligt redovisat |
-| 9–10 | Utöver förväntan: genomtänkt, testat och väl motiverat |
+| 9–10 | Mycket bra uppfyllt: genomtänkt, redovisat och väl motiverat |
 
 Antalet krav sätter därmed taket, och kvaliteten avgör var inom det ni hamnar:
 
