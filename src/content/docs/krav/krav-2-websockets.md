@@ -284,7 +284,10 @@ när användaren öppnar ett annat dokument.
 
 ---
 
-## Per projekt
+## Per projekt — förslag
+
+Det här är **förslag**, inte krav. Ni väljer själva vad WebSockets ska användas
+till; exemplen visar hur det kan se ut för respektive projekt.
 
 ### Texteditor — realtidsredigering
 
