@@ -5,10 +5,10 @@ description: "Realtid med Socket.io — serveruppsättning, rum och klientsida i
 
 **Gemensamt krav.** Gäller båda projekten, men med olika innehåll.
 
-- **Texteditor:** flera användare redigerar samma dokument och ser varandras
-  ändringar direkt
-- **Bokningssystem:** bokningskalendern uppdateras hos alla när någon bokar
-  eller avbokar
+- **Texteditor:** ni bestämmer själva vad WebSockets ska användas till. Ett tips:
+  flera användare redigerar samma dokument och ser varandras ändringar direkt
+- **Bokningssystem:** ni bestämmer själva vad WebSockets ska användas till. Ett
+  tips: bokningskalendern uppdateras hos alla när någon bokar eller avbokar
 
 ---
 

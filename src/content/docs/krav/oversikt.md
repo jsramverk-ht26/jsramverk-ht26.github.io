@@ -33,8 +33,8 @@ Resurs: `auth_mongo` i jsramverk-ht26.
 *[→ Utförlig beskrivning med kodexempel](/krav/krav-2-websockets/)*
 
 Använd Socket.io för att synkronisera innehåll i realtid utan att sidan laddas om.
-- **Texteditor:** Två användare redigerar samma dokument samtidigt. Ändringar synkroniseras direkt.
-- **Bokningssystem:** Bokningskalendern uppdateras hos alla inloggade användare när en bokning görs eller avbokas.
+- **Texteditor:** Ni bestämmer själva vad WebSockets ska användas till. Ett tips: två användare redigerar samma dokument samtidigt och ändringarna synkroniseras direkt.
+- **Bokningssystem:** Ni bestämmer själva vad WebSockets ska användas till. Ett tips: bokningskalendern uppdateras hos alla inloggade användare när en bokning görs eller avbokas.
 
 
 ## Krav 3 – Kommentarer
