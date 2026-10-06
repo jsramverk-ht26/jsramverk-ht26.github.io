@@ -1,13 +1,13 @@
 ---
 title: "Krav 3 — Kommentarer"
-description: "Kommentarer på dokument respektive bokningar. Bygger på krav 2."
+description: "Kommentarer på dokument respektive bokningar."
 ---
 
-**Gemensamt krav. Förutsätter krav 2 (WebSockets).**
+**Gemensamt krav.**
 
-Kommentarer ska dyka upp hos alla som tittar på samma sak, utan omladdning.
-Väljer ni krav 3 måste ni alltså också välja krav 2 — annars finns inte
-mekanismen som gör kommentarerna realtidsuppdaterade.
+Kommentarer ska kunna skapas, läsas och tas bort. Har ni också valt krav 2
+(WebSockets) kan de dyka upp hos alla som tittar på samma sak, utan omladdning.
+Annars hämtas de när sidan laddas.
 
 - **Texteditor:** kommentarer kopplade till rader i ett dokument
 - **Bokningssystem:** kommentarer eller noteringar på en bokning
@@ -96,7 +96,7 @@ router.post('/documents/:id/comments', requireAuth, async (req, res) => {
 
   const result = await db.collection('comments').insertOne(comment)
 
-  // Realtid: tala om för alla som har dokumentet öppet
+  // Realtid (om ni valt krav 2): tala om för alla som har dokumentet öppet
   io.to(`doc:${req.params.id}`).emit('comment:created', {
     _id: result.insertedId,
     ...comment
@@ -111,7 +111,7 @@ före riskerar ni att visa en kommentar som aldrig hamnade i databasen.
 
 ---
 
-## Klientsidan
+## Klientsidan (realtid, om ni valt krav 2)
 
 ```jsx
 useEffect(() => {

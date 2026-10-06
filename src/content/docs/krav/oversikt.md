@@ -14,7 +14,6 @@ Brokern **ska användas** av alla som valt resource-booking: all bokning går vi
 :::
 
 Tänk på att:
-- Krav 3 (Kommentarer) bygger på Krav 2 (WebSockets) — väljer ni Krav 3 måste Krav 2 också vara implementerat.
 - Krav 4 är projektspecifikt: Krav 4.1 gäller texteditor och Krav 4.2 bokningssystem — läs beskrivningen för ert projektalternativ.
 - Ni väljer själva vilka tre (eller fler) krav ni vill fokusera på. Planera detta tidigt.
 
@@ -41,7 +40,6 @@ Använd Socket.io för att synkronisera innehåll i realtid utan att sidan ladda
 
 *[→ Utförlig beskrivning med kodexempel](/krav/krav-3-kommentarer/)*
 
-Bygger på Krav 2 — Socket.io ska vara implementerat.
 - **Texteditor:** Kommentera specifika rader i ett dokument.
 - **Bokningssystem:** Lägg till kommentarer eller noteringar på en bokning.
 
