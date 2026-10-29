@@ -76,7 +76,11 @@ const token = jwt.sign(
 res.json({ token })
 ```
 
-`JWT_SECRET` ska ligga i `.env` och som GitHub Secret — **aldrig i koden**.
+`JWT_SECRET` ska ligga i `.env` lokalt och som GitHub Secret — **aldrig i koden**.
+En GitHub Secret når inte servern av sig själv: lägg även
+`echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env` i deploy-stegets skript i
+`deploy.yml`, bredvid raden för `MONGODB_URI`. Annars är variabeln `undefined`
+i containern och `jwt.sign` kraschar backend vid första inloggningen.
 Läcker den kan vem som helst skriva giltiga tokens.
 
 ### Middleware som skyddar routes
@@ -207,7 +211,7 @@ Börja med `auth_mongo` — det är minst och gjort för att läsas.
 |---------|-------|
 | Token fungerar men alla ser allas data | Ni glömde filtrera på `req.user.id` |
 | `jwt malformed` | Headern saknar `Bearer ` framför token |
-| Fungerar lokalt, inte deployat | `JWT_SECRET` saknas som GitHub Secret |
+| Fungerar lokalt, inte deployat (login ger 502 / "CORS-fel") | `JWT_SECRET` skrivs inte till `.env` på servern — en GitHub Secret räcker inte, lägg en `echo ... >> .env`-rad i `deploy.yml` |
 | Alla loggas ut vid omstart | `JWT_SECRET` genereras slumpmässigt vid start — lägg den i `.env` |
 | Lösenord syns i databasen | Ni sparade `password` i stället för hashen |
 
